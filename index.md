@@ -37,24 +37,22 @@
 ## こんなJSを書いてませんか
 
 ```javascript
-$(function(){
+$('.showItem1').click(function(){
+	$('.box .item1').show();
+	$('.box .item2').hide();
+	$(this).addClass('is-active');
+	$('.showItem2').removeClass('is-active');
+});
 
-	$('.showItem1').click(function(){
-		$('.box .item1').show();
-		$('.box .item2').hide();
-		$(this).addClass('is-active');
-		$('.showItem2').removeClass('is-active');
-	});
-
-	$('.showItem2').click(function(){
-		$('.box .item1').hide();
-		$('.box .item2').show();
-		$(this).addClass('is-active');
-		$('.showItem1').removeClass('is-active');
-	});
-
+$('.showItem2').click(function(){
+	$('.box .item1').hide();
+	$('.box .item2').show();
+	$(this).addClass('is-active');
+	$('.showItem1').removeClass('is-active');
 });
 ```
+
+[demo](http://jsfiddle.net/xS4P5/)
 
 ------
 
@@ -65,30 +63,31 @@ $(function(){
 ## こう
 
 ```javascript
-$(function(){
-	var $box = $('.box');
-	var $box__item1 = $box.find('.item1');
-	var $box__item2 = $box.find('.item2');
-	var $showItem1 = $('.showItem1');
-	var $showItem2 = $('.showItem2');
-	var cls_is_active = 'is-active';
+var $box = $('.box');
+var $box__item1 = $box.find('.item1');
+var $box__item2 = $box.find('.item2');
+var $showItem1 = $('.showItem1');
+var $showItem2 = $('.showItem2');
+var cls_is_active = 'is-active';
 
-	$showItem1.click(function(){
-		var $that = $(this);
-		$box__item1.show();
-		$box__item2.hide();
-		$that.addClass(cls_is_active);
-		$showItem2.removeClass(cls_is_active);
-	});
-	$showItem2.click(function(){
-		var $that = $(this);
-		$box__item1.hide();
-		$box__item2.show();
-		$that.addClass(cls_is_active);
-		$showItem1.removeClass(cls_is_active);
-	});
+$showItem1.click(function(){
+	var $that = $(this);
+	$box__item1.show();
+	$box__item2.hide();
+	$that.addClass(cls_is_active);
+	$showItem2.removeClass(cls_is_active);
+});
+$showItem2.click(function(){
+	var $that = $(this);
+	$box__item1.hide();
+	$box__item2.show();
+	$that.addClass(cls_is_active);
+	$showItem1.removeClass(cls_is_active);
 });
 ```
+
+[demo](http://jsfiddle.net/xS4P5/1/)
+
 ------
 
 ## なぜ変数化したか
@@ -113,13 +112,118 @@ $(function(){
 
 ## こんなJS書いてませんか
 
+```javascript
+$.getJSON("json/data.json", function(data){
+	var html = [];
+	// 取得した内容からHTMLを作成
+	$.each(data.diaries, function(diary){
+		html.push('<dl>');
+		html.push('<dt>'+ diary.date +'</dt>');
+		html.push('<dd>'+ diary.text +'</dd>');
+		html.push('</dl>');
+	});
+	// 整形したページに挿入する
+	$("#result").append(html.join(''));
+	// イベントをつける
+	$('dt').click(function(){
+		if ($(this).next('dd').is(':visible')) {
+			$(this).next('dd').hide();
+		} else {
+			$(this).next('dd').show();
+		}
+	});
+});
+```
+
+```javascript
+{
+	"diaries": [
+		{
+			"date": "2014/01/01",
+			"text": "The quick brown fox jumps over the lazy dog."
+		},
+		{
+			"date": "2014/01/01",
+			"text": "The quick brown fox jumps over the lazy dog."
+		}
+	]
+}
+```
+
+
 ------
 
 ## それを
 
 ------
 
+## こう分けて
+
+```javascript
+// 配列からHTMLを作成する
+function createDiary (diaries) {
+	var html = [];
+	$.each(diaries, function(diary){
+		html.push('<dl>');
+		html.push('<dt>'+ diary.date +'</dt>');
+		html.push('<dd>'+ diary.text +'</dd>');
+		html.push('</dl>');
+	});
+	return html.join('');
+};
+```
+
+```javascript
+// イベントをつける
+function eventify (selector) {
+	$(selector).click(function(){
+		var $dd = $(this).next('dd');
+		toggle($dd);
+	});
+};
+```
+
+```javascript
+// 要素の表示を切り替える
+function toggle ($dd) {
+	if ($dd.is(':visible')) {
+		$dd.hide();
+	} else {
+		$dd.show();
+	}
+};
+```
+
+------
+
 ## こう
+
+```javascript
+// もろもろ実行する
+$.getJSON("json/data.json", function(data){
+	// 配列からHTMLを作成する
+	var html = createDiary(data.diaries);
+	// 整形したページに挿入する
+	$("#result").append(html);
+	// イベントをつける
+	eventify("#result dt");
+});
+```
+
+------
+
+## 分けて書くと何がいいか
+
+- 問題が起きた時の発見が早い
+- 仕様の変更がしやすい
+ - やっぱdlじゃなくて〜
+ - クリックしたらdtにclass付けてー
+- 機能毎にJSファイルを分けることもできる
+
+<br>
+
+もっと良くする方法は、  
+他にもあるけどまずは(ry
 
 ---
 
@@ -129,13 +233,121 @@ $(function(){
 
 ## こんなJS書いてませんか
 
+```html
+<button class="changeBox1">100x100の明るい背景に変更</button>
+<button class="changeBox2">200x200の暗い背景に変更</button>
+<div class="box"></div>
+```
+
+```javascript
+$(function(){
+	$('.changeBox1').click(function(){
+		changeBox('light', 100, 100);
+	});
+	$('.changeBox2').click(function(){
+		changeBox('dark', 200, 200);
+	});
+	function changeBox(bgtype, width, height) {
+		if (bgtype === 'light') {
+			// 明るかったら
+			$('.box').css({
+				'width': width + 'px',
+				'height': height + 'px',
+				'color': '#fff',
+				'background-color': 'tomato'
+			});
+		} else {
+			// 暗かったら
+			$('.box').css({
+				'width': width + 'px',
+				'height': height + 'px',
+				'color': '#eee'
+				'background-color': '#000'
+			});
+		}
+	};
+});
+```
+
 ------
 
 ## それを
 
 ------
 
-## こう
+## こうしたり
+
+```javascript
+$(function(){
+	/* 省略 */
+	function changeBox(bgtype, width, height) {
+		var setting = {};
+		if (bgtype === 'light') {
+			setting = {
+				'width': width + 'px',
+				'height': height + 'px',
+				'color': '#fff',
+				'background-color': 'tomato'
+			};
+		} else {
+			setting = {
+				'width': width + 'px',
+				'height': height + 'px',
+				'color': '#eee'
+				'background-color': '#000'
+			};
+		}
+		$('.box').css(setting);
+	});
+});
+```
+
+------
+
+## こうする
+
+```javascript
+$(function(){
+	/* 省略 */
+	function changeBox(bgtype, width, height) {
+		// 明るいかくらいかを判別しておいて
+		var isLighten = (bgtype === 'lighten')? true : false ;
+		// 先にスタイルを用意して
+		var setting = {
+			'width': width + 'px',
+			'height': height + 'px',
+			'color': isLighten ? '#fff' : '#eee',
+			'background-color': isLighten ? 'tomato' : '#000'
+		};
+		// スタイルを当てる
+		$('.box').css(setting);
+	});
+});
+```
+
+<br>
+
+もっと良くする方法はあるけど、とり(ry
+
+------
+
+## なぜネストを減らすか
+
+- 横に長いと、流れを追うのが大変
+- 処理が追いやすくなる
+
+---
+
+## まとめ
+
+- 登場頻度が多いものは、変数にしておくと、あとで幸せに。
+- まとめてやらないで、必要な機能毎に分けて考える。
+- ネストが深くなるときは、立ち止まってコードを見直す
+- コードは見やすいほうがよい
+
+---
+
+# 宣伝
 
 ---
 
